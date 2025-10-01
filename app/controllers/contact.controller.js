@@ -9,14 +9,16 @@ exports.create = async (req, res, next) => {
 
   try {
     const contactService = new ContactService(MongoDB.client);
+
+    // Không có _id trong payload, MongoDB sẽ tự sinh ObjectId
     const document = await contactService.create(req.body);
     return res.send(document);
+
   } catch (error) {
-    return next(
-      new ApiError(500, "An error occurred while creating the contact")
-    );
+    return next(new ApiError(500, "An error occurred while creating the contact"));
   }
 };
+
 // Retrieve all contacts of a user from the database
 exports.findAll = async (req, res, next) => {
   let documents = [];
