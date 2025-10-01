@@ -17,3 +17,140 @@ exports.create = async (req, res, next) => {
     );
   }
 };
+// Retrieve all contacts of a user from the database
+exports.findAll = async (req, res, next) => {
+  let documents = [];
+
+  try {
+    const contactService = new ContactService(MongoDB.client);
+    const { name } = req.query;
+
+    if (name) {
+      documents = await contactService.findByName(name);
+    } else {
+      documents = await contactService.find({});
+    }
+  } catch (error) {
+    return next(
+      new ApiError(500, "An error occurred while retrieving contacts")
+    );
+  }
+
+  return res.send(documents);
+};
+
+// Find a single contact with an id
+exports.findOne = async (req, res, next) => {
+  try {
+    const contactService = new ContactService(MongoDB.client);
+    const document = await contactService.findById(req.params.id);
+
+    if (!document) {
+      return next(new ApiError(404, "Contact not found"));
+    }
+
+    return res.send(document);
+  } catch (error) {
+    return next(
+      new ApiError(
+        500,
+        `Error retrieving contact with id=${req.params.id}`
+      )
+    );
+  }
+};
+
+// Update a contact by the id in the request
+exports.update = async (req, res, next) => {
+    // 1. Kiểm tra body rỗng
+    if (Object.keys(req.body).length === 0) {
+        return next(new ApiError(400, "Data to update can not be empty"));
+    }
+
+    try {
+        // 2. Tạo service để thao tác database
+        const contactService = new ContactService(MongoDB.client);
+
+        // 3. Gọi service update với id từ params + dữ liệu từ body
+        const document = await contactService.update(req.params.id, req.body);
+
+        // 4. Nếu không tìm thấy contact thì báo lỗi
+        if (!document) {
+            return next(new ApiError(404, "Contact not found"));
+        }
+
+        // 5. Nếu thành công trả về message
+        return res.send({ message: "Contact was updated successfully" });
+
+    } catch (error) {
+        // 6. Bắt lỗi hệ thống
+        return next(
+            new ApiError(500, `Error updating contact with id=${req.params.id}`)
+        );
+    }
+};
+
+// Delete a contact with the specified id in the request
+exports.delete = async (req, res, next) => {
+    try {
+        // 1. Tạo service để thao tác database
+        const contactService = new ContactService(MongoDB.client);
+
+        // 2. Gọi service delete với id từ params
+        const document = await contactService.delete(req.params.id);
+
+        // 3. Nếu không tìm thấy contact thì trả về 404
+        if (!document) {
+            return next(new ApiError(404, "Contact not found"));
+        }
+
+        // 4. Nếu thành công trả về message
+        return res.send({ message: "Contact was deleted successfully" });
+
+    } catch (error) {
+        // 5. Nếu có lỗi hệ thống thì trả về 500
+        return next(
+            new ApiError(
+                500,
+                `Could not delete contact with id=${req.params.id}`
+            )
+        );
+    }
+};
+
+// Find all favorite contacts of a user
+exports.findAllFavorite = async (_req, res, next) => {
+    try {
+        // 1. Tạo service kết nối MongoDB
+        const contactService = new ContactService(MongoDB.client);
+
+        // 2. Gọi hàm service để lấy tất cả contact có favorite = true
+        const documents = await contactService.findFavorite();
+
+        // 3. Trả kết quả về client
+        return res.send(documents);
+    } catch (error) {
+        // 4. Nếu có lỗi thì trả về 500
+        return next(
+            new ApiError(
+                500,
+                "An error occurred while retrieving favorite contacts"
+            )
+        );
+    }
+};
+
+// Delete all contacts of a user from the database 
+exports.deleteAll = async (_req, res, next) => {
+  try {
+    const contactService = new Contact Service (MongoDB.client); 
+    const deletedCount = await contactService.deleteAll(); 
+    return res.send({
+      message: `${deletedCount} contacts were deleted successfully`,
+    });
+  } catch (error) {
+    return next(
+      new ApiError (500, "An error occurred while removing all contacts")
+    );
+  }
+};
